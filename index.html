@@ -1,75 +1,1344 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>SerenityOS</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-
-body{
-font-family: Arial;
-background:#f4f7fb;
-padding:40px;
+:root {
+  --navy:#0b1f2e; --navy2:#0d2535; --teal:#1a7a7a; --tm:#22a8a8; --tl:#e0f4f4;
+  --gold:#c8a45a; --cream:#f7f4ef; --warm:#e8e2d8;
+  --text:#1a2830; --muted:#7a8f9a;
+  --ok:#1e8a52; --okl:#e4f5ed;
+  --warn:#b87020; --wl:#fef3e2;
+  --danger:#b83030; --dl:#fde8e8;
+  --white:#fff; --lg:#f7f6f3;
 }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;color:var(--text);}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;}
+input,textarea,select{font-family:'DM Sans',sans-serif;}
 
-.header{
-font-size:30px;
-font-weight:bold;
-margin-bottom:30px;
+/* ══════════════════════════════════
+   LOADING
+══════════════════════════════════ */
+#loading{
+  position:fixed;inset:0;background:var(--navy);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:16px;
+  background:radial-gradient(ellipse at 30% 30%, rgba(26,122,122,.15) 0%, transparent 60%), var(--navy);
 }
+#loading.hide{display:none;}
+.spinner{width:44px;height:44px;border:3px solid rgba(26,122,122,.3);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{color:#fff;font-size:15px;font-weight:600;}
+.load-sub{color:var(--muted);font-size:12px;}
 
-.card{
-background:white;
-padding:20px;
-border-radius:15px;
-margin-bottom:20px;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
+/* ══════════════════════════════════
+   TOAST
+══════════════════════════════════ */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:1000;display:none;border-left:3px solid var(--teal);box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:320px;}
+.toast.show{display:block;animation:toastIn .3s ease;}
+.toast.err{border-left-color:var(--danger);}
+.toast.ok{border-left-color:var(--ok);}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══════════════════════════════════
+   SCREENS
+══════════════════════════════════ */
+.screen{display:none!important;min-height:100vh;}
+.screen.on{display:block!important;}
+
+/* ══════════════════════════════════
+   SCREEN: LOGIN
+══════════════════════════════════ */
+#sc-login{
+  display:none;
+  background:radial-gradient(ellipse at 20% 20%, rgba(26,122,122,.15) 0%, transparent 50%),
+             radial-gradient(ellipse at 80% 80%, rgba(200,164,90,.08) 0%, transparent 50%),
+             var(--navy);
+  display:flex;align-items:center;justify-content:center;padding:20px;
 }
-
-.metric{
-font-size:40px;
-color:#2563eb;
-font-weight:bold;
+.login-card{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;padding:48px 40px;width:440px;max-width:100%;
+  text-align:center;backdrop-filter:blur(20px);
 }
+.login-logo{width:64px;height:64px;background:var(--teal);border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:#fff;margin:0 auto 20px;box-shadow:0 8px 32px rgba(26,122,122,.4);}
+.login-title{font-family:'Playfair Display',serif;font-size:40px;font-weight:900;color:#fff;line-height:1;margin-bottom:6px;}
+.login-title span{color:var(--tm);}
+.login-sub{color:rgba(255,255,255,.4);font-size:14px;margin-bottom:36px;}
+.login-roles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:32px;}
+.role-chip{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 8px;text-align:center;}
+.role-chip .ri{font-size:22px;margin-bottom:4px;}
+.role-chip .rn{color:#fff;font-size:11px;font-weight:700;}
+.role-chip .rd{color:rgba(255,255,255,.3);font-size:9px;margin-top:2px;}
+.btn-google{width:100%;padding:14px;border-radius:12px;background:#fff;color:#1a2830;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+.btn-google:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(0,0,0,.3);}
+.login-note{color:rgba(255,255,255,.2);font-size:11px;margin-top:14px;line-height:1.6;}
 
-.button{
-background:#2563eb;
-color:white;
-padding:20px;
-border-radius:15px;
-border:none;
-font-size:18px;
-width:100%;
-cursor:pointer;
-margin-top:20px;
+/* ══════════════════════════════════
+   SCREEN: SETUP ROL
+══════════════════════════════════ */
+#sc-setup{background:var(--cream);display:flex;align-items:center;justify-content:center;padding:20px;}
+.setup-card{background:#fff;border-radius:20px;padding:36px;width:480px;max-width:100%;box-shadow:0 8px 40px rgba(11,31,46,.1);}
+.setup-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.setup-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.setup-roles{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.setup-role-btn{padding:16px;border-radius:12px;border:2px solid var(--warm);background:#fff;text-align:left;display:flex;align-items:center;gap:12px;transition:all .18s;}
+.setup-role-btn:hover{border-color:var(--teal);background:var(--tl);}
+.setup-role-btn.on{border-color:var(--teal);background:var(--tl);}
+.sr-ico{font-size:26px;flex-shrink:0;}
+.sr-n{font-size:14px;font-weight:700;color:var(--navy);}
+.sr-d{font-size:11px;color:var(--muted);margin-top:2px;}
+.pac-select{width:100%;padding:10px 14px;border:1.5px solid var(--warm);border-radius:8px;font-size:14px;color:var(--text);margin-bottom:16px;display:none;}
+.pac-select.show{display:block;}
+.btn-confirm{width:100%;padding:14px;border-radius:12px;background:var(--teal);color:#fff;font-size:15px;font-weight:700;}
+.btn-signout-sm{background:transparent;color:var(--muted);font-size:12px;margin-top:10px;display:block;width:100%;text-align:center;text-decoration:underline;}
+
+/* ══════════════════════════════════
+   SCREEN: APP (layout con sidebar)
+══════════════════════════════════ */
+#sc-app.on{display:flex!important;}
+.sidebar{width:220px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:100;}
+.sb-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.07);}
+.sb-mark{width:36px;height:36px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:17px;font-weight:900;color:#fff;margin-bottom:8px;}
+.sb-name{color:#fff;font-size:14px;font-weight:700;}
+.sb-role-lbl{color:var(--muted);font-size:10px;margin-top:2px;}
+.sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.sb-sec{font-size:9px;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1.5px;padding:10px 8px 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.06);}
+.nav-item.on{background:rgba(26,122,122,.25);color:var(--tm);}
+.nav-item .ni{font-size:15px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;min-width:18px;text-align:center;}
+.nav-badge.hide{display:none;}
+.sb-bottom{padding:12px;border-top:1px solid rgba(255,255,255,.07);}
+.sb-user{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.sb-av{width:30px;height:30px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sb-uname{color:#fff;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.btn-logout{width:100%;padding:7px;border-radius:8px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.4);font-size:11px;font-weight:600;text-align:center;}
+.btn-logout:hover{background:rgba(184,48,48,.2);color:#ff8080;}
+
+.main-area{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:#fff;border-bottom:1px solid var(--warm);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.tb-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--navy);}
+.tb-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.live-pill{display:flex;align-items:center;gap:6px;background:var(--okl);color:var(--ok);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;border:1px solid var(--ok);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-primary{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;background:var(--teal);color:#fff;}
+.btn-outline{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;background:transparent;border:1.5px solid var(--warm);color:var(--muted);}
+
+.content{padding:24px 28px;background:var(--lg);flex:1;}
+
+/* VIEWS */
+.view{display:none;}
+.view.on{display:block;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.kpi{background:#fff;border:1px solid var(--warm);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi.c-teal::before{background:var(--teal);}
+.kpi.c-danger::before{background:var(--danger);}
+.kpi.c-warn::before{background:var(--warn);}
+.kpi.c-ok::before{background:var(--ok);}
+.kpi-v{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;line-height:1;}
+.kpi.c-teal .kpi-v{color:var(--teal);}
+.kpi.c-danger .kpi-v{color:var(--danger);}
+.kpi.c-warn .kpi-v{color:var(--warn);}
+.kpi.c-ok .kpi-v{color:var(--ok);}
+.kpi-l{font-size:11px;color:var(--muted);margin-top:5px;}
+.kpi-s{font-size:10px;font-weight:600;margin-top:4px;color:var(--muted);}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--warm);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.card-hdr{background:var(--navy);padding:12px 16px;}
+.card-t{color:#fff;font-size:13px;font-weight:700;}
+.card-s{color:var(--muted);font-size:10px;margin-top:1px;}
+.card-body{padding:16px;}
+
+/* ALERT BANNER */
+.crit-banner{background:linear-gradient(135deg,var(--danger),#9a1f1f);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;animation:flash 2.5s infinite;box-shadow:0 4px 20px rgba(184,48,48,.3);}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.88}}
+.cb-btn{margin-left:auto;background:#fff;color:var(--danger);font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;flex-shrink:0;}
+
+/* SHIFT CARDS */
+.shift-card{background:#fff;border:1px solid var(--warm);border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.shift-card.crit{border-color:var(--danger);}
+.sc-hdr{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--warm);}
+.sc-hdr.bg-crit{background:var(--dl);}
+.sc-hdr.bg-ok{background:var(--okl);}
+.sc-pac{font-size:14px;font-weight:700;color:var(--navy);}
+.sc-car{font-size:11px;color:var(--muted);margin-top:2px;}
+.sc-timer{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--ok);}
+.sc-timer.c-crit{color:var(--danger);}
+.sc-body{padding:12px 16px;}
+.sc-vitals{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.sv{background:var(--lg);border-radius:8px;padding:8px 5px;text-align:center;}
+.sv.ok{background:var(--okl);}
+.sv.crit{background:var(--dl);}
+.sv-v{font-size:13px;font-weight:800;}
+.sv.ok .sv-v{color:var(--ok);}
+.sv.crit .sv-v{color:var(--danger);}
+.sv-l{font-size:9px;color:var(--muted);margin-top:1px;}
+.empty-state{text-align:center;padding:40px;color:var(--muted);}
+.ei{font-size:36px;margin-bottom:10px;}
+.et{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+
+/* NÓMINA */
+.nom-table-wrap{overflow-x:auto;}
+table.nom{width:100%;border-collapse:collapse;}
+table.nom th{background:var(--lg);padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--warm);}
+table.nom td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--warm);}
+table.nom tr:last-child td{border-bottom:none;}
+table.nom .tot td{background:var(--tl)!important;font-weight:700;color:var(--teal);}
+.pago-val{font-weight:800;color:var(--ok);font-size:14px;}
+.period-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.pt{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;background:#fff;border:1.5px solid var(--warm);color:var(--muted);}
+.pt.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* ALERTAS */
+.alert-item{background:#fff;border:1px solid var(--warm);border-radius:12px;padding:14px 16px;display:flex;gap:12px;margin-bottom:10px;}
+.alert-item.unread{border-left:3px solid var(--danger);}
+.ai-t{font-size:13px;font-weight:700;color:var(--navy);}
+.ai-s{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.ai-time{font-size:10px;color:var(--muted);margin-top:5px;}
+.sev-pill{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;flex-shrink:0;}
+.sev-c{background:var(--dl);color:var(--danger);}
+.sev-w{background:var(--wl);color:var(--warn);}
+.sev-i{background:var(--tl);color:var(--teal);}
+
+/* PACIENTES */
+.pac-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pac-card{background:#fff;border:1px solid var(--warm);border-radius:14px;overflow:hidden;}
+.pac-hdr{background:var(--navy);padding:14px 16px;display:flex;align-items:center;gap:10px;}
+.pac-av{width:36px;height:36px;background:var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.pac-n{color:#fff;font-size:14px;font-weight:700;}
+.pac-d{color:var(--muted);font-size:10px;margin-top:2px;}
+.pac-body{padding:14px 16px;}
+.pac-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--warm);font-size:12px;}
+.pac-row:last-child{border-bottom:none;}
+.pac-lbl{color:var(--muted);}
+.pac-val{font-weight:600;color:var(--navy);text-align:right;max-width:55%;}
+
+/* ══════════════════════════════════
+   TABLET VIEW (cuidadora)
+══════════════════════════════════ */
+#sc-tablet{background:var(--cream);min-height:100vh;}
+.tab-header{background:var(--navy);padding:20px 24px;
+  background:radial-gradient(ellipse at 80% 50%, rgba(26,122,122,.2) 0%, transparent 60%), var(--navy);}
+.th-brand{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.th-mark{width:32px;height:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:900;color:#fff;}
+.th-name{color:#fff;font-size:14px;font-weight:700;}
+.th-time{font-family:'Playfair Display',serif;font-size:56px;font-weight:900;color:#fff;line-height:1;margin-bottom:6px;}
+.th-date{color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;}
+.th-prompt{color:rgba(255,255,255,.35);font-size:13px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;}
+.cuid-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cuid-btn{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;display:flex;align-items:center;gap:10px;transition:all .18s;color:#fff;text-align:left;}
+.cuid-btn:hover,.cuid-btn:active{background:rgba(26,122,122,.25);border-color:var(--teal);}
+.cuid-av{width:40px;height:40px;background:var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.cuid-nm{font-size:13px;font-weight:700;}
+.cuid-rl{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px;}
+
+/* Turno activo */
+.turno-activo{background:var(--cream);min-height:calc(100vh - 220px);}
+.turno-hdr{background:var(--navy);padding:16px 20px;}
+.ta-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ta-pac{color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;letter-spacing:1px;}
+.ta-salir{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);padding:6px 12px;border-radius:16px;font-size:11px;font-weight:600;}
+.ta-pacn{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px;}
+.ta-cuid{color:var(--tm);font-size:13px;font-weight:600;}
+.ta-timer-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);}
+.ta-timer{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:#fff;}
+.tabs-bar{display:flex;background:#fff;border-bottom:2px solid var(--warm);}
+.tab-btn{flex:1;padding:13px 8px;text-align:center;font-size:12px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;background:none;transition:all .18s;}
+.tab-btn.on{color:var(--teal);border-bottom-color:var(--teal);}
+.tab-panel{display:none;padding:18px;}
+.tab-panel.on{display:block;}
+
+/* Vitales */
+.vit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.vc{background:#fff;border:1.5px solid var(--warm);border-radius:12px;padding:13px;transition:border-color .2s;}
+.vc.filled{border-color:var(--teal);}
+.vc.crit{border-color:var(--danger);background:var(--dl);}
+.vc-l{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:7px;}
+.vc-inp{width:100%;border:none;background:transparent;font-size:26px;font-weight:800;color:var(--text);font-family:'Playfair Display',serif;outline:none;-moz-appearance:textfield;}
+.vc-inp::-webkit-outer-spin-button,.vc-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.vc-unit{font-size:11px;color:var(--muted);margin-top:2px;}
+.vc-status{font-size:10px;font-weight:700;margin-top:4px;}
+.vc-status.ok{color:var(--ok);}
+.vc-status.crit{color:var(--danger);}
+.pa-row{display:flex;align-items:center;gap:4px;}
+.pa-inp{width:55px;border:none;background:transparent;font-size:22px;font-weight:800;color:var(--text);font-family:'Playfair Display',serif;outline:none;-moz-appearance:textfield;}
+.pa-inp::-webkit-outer-spin-button,.pa-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.pa-sep{font-size:18px;font-weight:800;color:var(--muted);}
+
+/* Actividades */
+.acts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.act-item{background:#fff;border:1.5px solid var(--warm);border-radius:10px;padding:12px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .18s;}
+.act-item.on{background:var(--tl);border-color:var(--teal);}
+.act-ico{font-size:20px;flex-shrink:0;}
+.act-nm{font-size:12px;font-weight:600;}
+.act-chk{margin-left:auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--warm);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.act-item.on .act-chk{background:var(--teal);border-color:var(--teal);color:#fff;}
+
+/* Novedades */
+.nov-ta{width:100%;min-height:150px;padding:12px;border:1.5px solid var(--warm);border-radius:12px;font-size:14px;line-height:1.7;color:var(--text);background:#fff;resize:none;outline:none;}
+.nov-ta:focus{border-color:var(--teal);}
+
+/* Bottom bar */
+.bottom-bar{background:#fff;border-top:1px solid var(--warm);padding:12px 18px;display:flex;gap:10px;position:sticky;bottom:0;}
+.btn-guardar{flex:1;padding:13px;border-radius:10px;background:var(--teal);color:#fff;font-size:14px;font-weight:700;}
+.btn-guardar:disabled{background:var(--warm);color:var(--muted);}
+.btn-salir-turno{padding:13px 16px;border-radius:10px;background:var(--dl);color:var(--danger);font-size:13px;font-weight:700;border:1.5px solid rgba(184,48,48,.2);}
+
+/* Confirmación */
+.confirm-screen{text-align:center;padding:40px 24px;}
+.cf-ico{font-size:64px;margin-bottom:20px;animation:bounce .6s ease;}
+@keyframes bounce{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+.cf-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--navy);margin-bottom:8px;}
+.cf-sub{color:var(--muted);font-size:14px;margin-bottom:24px;}
+.cf-detail{background:var(--lg);border-radius:12px;padding:16px;margin-bottom:24px;text-align:left;}
+.cf-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--warm);font-size:13px;}
+.cf-row:last-child{border-bottom:none;}
+.cf-lbl{color:var(--muted);}
+.cf-val{font-weight:700;color:var(--navy);}
+.btn-continuar{padding:14px 32px;border-radius:12px;background:var(--teal);color:#fff;font-size:15px;font-weight:700;}
+
+/* Checkout */
+.checkout-screen{text-align:center;padding:40px 24px;}
+.co-res{background:var(--lg);border-radius:12px;padding:16px;margin:16px 0 24px;text-align:left;}
+.btn-checkout-confirm{width:100%;padding:14px;border-radius:12px;background:var(--danger);color:#fff;font-size:15px;font-weight:700;margin-bottom:10px;}
+.btn-checkout-cancel{background:transparent;color:var(--muted);font-size:13px;padding:8px;}
+
+/* Alerta crítica overlay */
+.alerta-overlay{position:fixed;inset:0;background:rgba(184,48,48,.95);z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;}
+.alerta-overlay.show{display:flex;animation:flashBg 1s infinite;}
+@keyframes flashBg{0%,100%{background:rgba(184,48,48,.95)}50%{background:rgba(140,20,20,.95)}}
+.ao-btn{background:#fff;color:var(--danger);padding:14px 32px;border-radius:12px;font-size:15px;font-weight:800;margin-top:24px;}
+
+/* ══════════════════════════════════
+   FAMILIA VIEW
+══════════════════════════════════ */
+.fam-top{background:linear-gradient(135deg,var(--navy),var(--navy2));padding:22px 24px;margin:-24px -28px 20px;}
+.fam-greeting{color:#fff;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.fam-sub{color:rgba(255,255,255,.5);font-size:12px;margin-top:3px;}
+.fam-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fam-card{background:#fff;border:1px solid var(--warm);border-radius:14px;overflow:hidden;}
+.fam-card.full{grid-column:1/-1;}
+.fc-hdr{padding:12px 16px;border-bottom:1px solid var(--warm);display:flex;align-items:center;justify-content:space-between;}
+.fc-t{font-size:13px;font-weight:700;color:var(--navy);}
+.fc-s{font-size:10px;color:var(--muted);}
+.fc-body{padding:14px 16px;}
+.fv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.fv{border-radius:10px;padding:12px 8px;text-align:center;}
+.fv.ok{background:var(--okl);border:1px solid var(--ok);}
+.fv.crit{background:var(--dl);border:1px solid var(--danger);}
+.fv.neu{background:var(--lg);border:1px solid var(--warm);}
+.fv-v{font-size:18px;font-weight:800;}
+.fv.ok .fv-v{color:var(--ok);}
+.fv.crit .fv-v{color:var(--danger);}
+.fv.neu .fv-v{color:var(--text);}
+.fv-l{font-size:9px;color:var(--muted);margin-top:3px;}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .main-area{margin-left:0;}
+  .kpi-row{grid-template-columns:1fr 1fr;}
+  .pac-grid,.fam-grid{grid-template-columns:1fr;}
+  .fv-grid{grid-template-columns:1fr 1fr;}
+  .sc-vitals,.vit-grid{grid-template-columns:1fr 1fr;}
 }
-
 </style>
 </head>
-
 <body>
 
-<div class="header">SerenityOS</div>
-
-<div class="card">
-<h3>Ritmo cardíaco</h3>
-<div class="metric">92 lpm</div>
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="load-txt">SerenityOS</div>
+  <div class="load-sub">Verificando sesión...</div>
 </div>
 
-<div class="card">
-<h3>Presión arterial</h3>
-<div class="metric">120/80</div>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ALERTA CRÍTICA -->
+<div class="alerta-overlay" id="alertaOverlay">
+  <div style="font-size:72px">🚨</div>
+  <div style="font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:#fff;margin-top:16px">¡ALERTA CRÍTICA!</div>
+  <div style="color:rgba(255,255,255,.85);font-size:15px;line-height:1.7;margin-top:12px;max-width:360px" id="alertaMsg"></div>
+  <button class="ao-btn" onclick="cerrarAlerta()">Entendido — Continuar</button>
 </div>
 
-<div class="card">
-<h3>Medicamento</h3>
-<p>Lisinopril 10mg tomado hace 1h</p>
+<!-- ════ SCREEN: LOGIN ════ -->
+<div class="screen" id="sc-login">
+  <div class="login-card">
+    <div class="login-logo">S</div>
+    <div class="login-title">Serenity<span>OS</span></div>
+    <div class="login-sub">Serenity Home · Quito, Ecuador</div>
+    <div class="login-roles">
+      <div class="role-chip"><div class="ri">👩‍💼</div><div class="rn">Coordinadora</div><div class="rd">Panel completo</div></div>
+      <div class="role-chip"><div class="ri">👩‍⚕️</div><div class="rn">Cuidadora</div><div class="rd">Tablet turno</div></div>
+      <div class="role-chip"><div class="ri">👨‍👩‍👧</div><div class="rn">Familia</div><div class="rd">Ver paciente</div></div>
+    </div>
+    <button class="btn-google" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continuar con Google
+    </button>
+    <div class="login-note">Solo personas autorizadas por Serenity Home pueden acceder.</div>
+  </div>
 </div>
 
-<button class="button">
-Llamada de Emergencia
-</button>
+<!-- ════ SCREEN: SETUP ROL ════ -->
+<div class="screen" id="sc-setup">
+  <div class="setup-card">
+    <div class="setup-title">¿Cuál es tu rol?</div>
+    <div class="setup-sub" id="setup-sub">Primera vez que ingresas — selecciona tu rol.</div>
+    <div class="setup-roles">
+      <button class="setup-role-btn" onclick="selRole('coordinadora',this)"><div class="sr-ico">👩‍💼</div><div><div class="sr-n">Coordinadora</div><div class="sr-d">Acceso completo: dashboard, nómina, alertas, pacientes</div></div></button>
+      <button class="setup-role-btn" onclick="selRole('cuidadora',this)"><div class="sr-ico">👩‍⚕️</div><div><div class="sr-n">Cuidadora</div><div class="sr-d">Registrar turnos, vitales y actividades</div></div></button>
+      <button class="setup-role-btn" onclick="selRole('familia',this)"><div class="sr-ico">👨‍👩‍👧</div><div><div class="sr-n">Familiar</div><div class="sr-d">Ver el estado de su paciente</div></div></button>
+    </div>
+    <select class="pac-select" id="pac-select"></select>
+    <button class="btn-confirm" onclick="confirmarRol()">Confirmar y entrar →</button>
+    <button class="btn-signout-sm" onclick="signOut()">← Cerrar sesión</button>
+  </div>
+</div>
 
+<!-- ════ SCREEN: APP (Coordinadora) ════ -->
+<div class="screen" id="sc-app">
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-mark">S</div>
+      <div class="sb-name">SerenityOS</div>
+      <div class="sb-role-lbl" id="sb-rol-lbl">Coordinadora</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Principal</div>
+      <button class="nav-item on" onclick="goView('dashboard')"><span class="ni">📊</span>Dashboard<span class="nav-badge hide" id="badge-t">0</span></button>
+      <button class="nav-item" onclick="goView('nomina')"><span class="ni">💰</span>Nómina</button>
+      <button class="nav-item" onclick="goView('alertas')"><span class="ni">🔔</span>Alertas<span class="nav-badge hide" id="badge-a">0</span></button>
+      <div class="sb-sec">Datos</div>
+      <button class="nav-item" onclick="goView('pacientes')"><span class="ni">🏥</span>Pacientes</button>
+      <button class="nav-item" onclick="goView('cuidadoras')"><span class="ni">👩‍⚕️</span>Cuidadoras</button>
+    </nav>
+    <div class="sb-bottom">
+      <div class="sb-user"><div class="sb-av">👤</div><div class="sb-uname" id="sb-uname">—</div></div>
+      <button class="btn-logout" onclick="signOut()">Cerrar sesión</button>
+    </div>
+  </aside>
+  <div class="main-area">
+    <div class="topbar">
+      <div><div class="tb-title" id="tb-title">Dashboard</div><div class="tb-sub" id="tb-sub">Vista en tiempo real · Serenity Home</div></div>
+      <div class="tb-right">
+        <div class="live-pill"><div class="live-dot"></div>En vivo</div>
+        <button class="btn-outline" onclick="cargarDatos()">🔄 Actualizar</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="view on" id="v-dashboard">
+        <div id="alert-banners"></div>
+        <div class="kpi-row">
+          <div class="kpi c-teal"><div class="kpi-v" id="k-turnos">—</div><div class="kpi-l">Turnos activos</div><div class="kpi-s" id="k-turnos-s">—</div></div>
+          <div class="kpi c-danger"><div class="kpi-v" id="k-alertas">—</div><div class="kpi-l">Alertas sin revisar</div><div class="kpi-s" id="k-alertas-s">—</div></div>
+          <div class="kpi c-ok"><div class="kpi-v" id="k-pacs">—</div><div class="kpi-l">Pacientes activos</div><div class="kpi-s">En base de datos</div></div>
+          <div class="kpi c-warn"><div class="kpi-v" id="k-cuids">—</div><div class="kpi-l">Cuidadoras</div><div class="kpi-s">Registradas</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Turnos Activos</div>
+            <div id="turnos-container"><div class="empty-state"><div class="ei">⏳</div><div class="et">Cargando...</div></div></div>
+          </div>
+          <div>
+            <div class="card"><div class="card-hdr"><div class="card-t">Pacientes</div></div><div class="card-body" id="pac-resumen"><div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Cargando...</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NÓMINA -->
+      <div class="view" id="v-nomina">
+        <div class="period-tabs">
+          <button class="pt on" onclick="setPeriodo('q1',this)">1ra Quincena</button>
+          <button class="pt" onclick="setPeriodo('q2',this)">2da Quincena</button>
+          <button class="pt" onclick="setPeriodo('mes',this)">Mes completo</button>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi c-teal"><div class="kpi-v" id="n-hrs">—</div><div class="kpi-l">Horas totales</div></div>
+          <div class="kpi c-ok"><div class="kpi-v" id="n-pago">—</div><div class="kpi-l">Total a pagar</div></div>
+          <div class="kpi c-warn"><div class="kpi-v" id="n-turnos">—</div><div class="kpi-l">Turnos del período</div></div>
+          <div class="kpi c-gold" style="--c-gold:var(--gold)"><div class="kpi-v" id="n-noche" style="color:var(--gold)">—</div><div class="kpi-l">Horas nocturnas</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-t">Detalle por Cuidadora</div><div class="card-s" id="n-periodo-lbl">—</div></div>
+          <div class="nom-table-wrap" id="nom-container"><div class="empty-state"><div class="ei">💰</div><div class="et">Cargando nómina...</div></div></div>
+        </div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div class="view" id="v-alertas">
+        <div id="alertas-container"><div class="empty-state"><div class="ei">🔔</div><div class="et">Cargando alertas...</div></div></div>
+      </div>
+
+      <!-- PACIENTES -->
+      <div class="view" id="v-pacientes">
+        <div class="pac-grid" id="pacientes-container"><div class="empty-state"><div class="ei">🏥</div><div class="et">Cargando...</div></div></div>
+      </div>
+
+      <!-- CUIDADORAS -->
+      <div class="view" id="v-cuidadoras">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="cuidadoras-container"><div class="empty-state"><div class="ei">👩‍⚕️</div><div class="et">Cargando...</div></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════ SCREEN: TABLET (Cuidadora) ════ -->
+<div class="screen" id="sc-tablet">
+  <!-- Bienvenida tablet -->
+  <div id="tab-bienvenida">
+    <div class="tab-header">
+      <div class="th-brand"><div class="th-mark">S</div><div class="th-name">SerenityOS · Serenity Home</div></div>
+      <div class="th-time" id="tab-clock">--:--</div>
+      <div class="th-date" id="tab-date">—</div>
+      <div class="th-prompt">¿Quién inicia el turno?</div>
+      <div class="cuid-btns" id="tab-cuid-btns"><div style="color:rgba(255,255,255,.3);font-size:13px;grid-column:1/-1;text-align:center;padding:16px">Cargando...</div></div>
+    </div>
+    <div style="padding:20px;text-align:center">
+      <button style="background:transparent;color:var(--muted);font-size:12px;text-decoration:underline" onclick="signOut()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- Turno activo -->
+  <div id="tab-turno" style="display:none">
+    <div class="turno-hdr">
+      <div class="ta-top">
+        <div class="ta-pac">Paciente</div>
+        <button class="ta-salir" onclick="showCheckout()">Finalizar turno →</button>
+      </div>
+      <div class="ta-pacn" id="ta-pacn">—</div>
+      <div class="ta-cuid" id="ta-cuid">—</div>
+      <div class="ta-timer-row">
+        <div><div class="ta-timer" id="ta-timer">0:00:00</div><div style="color:rgba(255,255,255,.35);font-size:10px">turno activo</div></div>
+        <div class="live-pill"><div class="live-dot"></div>En vivo</div>
+      </div>
+    </div>
+    <div class="tabs-bar">
+      <button class="tab-btn on" onclick="goTab('vitales',this)">❤️ Vitales</button>
+      <button class="tab-btn" onclick="goTab('actividades',this)">✅ Actividades</button>
+      <button class="tab-btn" onclick="goTab('novedades',this)">📝 Novedades</button>
+    </div>
+    <div class="tab-panel on" id="tp-vitales">
+      <div class="vit-grid">
+        <div class="vc" id="vc-sat"><div class="vc-l">Saturación O₂</div><input class="vc-inp" type="number" id="v-sat" placeholder="--" oninput="checkV('sat')"><div class="vc-unit">%</div><div class="vc-status" id="vs-sat"></div></div>
+        <div class="vc" id="vc-fc"><div class="vc-l">Frec. Cardíaca</div><input class="vc-inp" type="number" id="v-fc" placeholder="--" oninput="checkV('fc')"><div class="vc-unit">lpm</div><div class="vc-status" id="vs-fc"></div></div>
+        <div class="vc" id="vc-pa" style="grid-column:1/-1"><div class="vc-l">Presión Arterial</div><div class="pa-row"><input class="pa-inp" type="number" id="v-pas" placeholder="--" oninput="checkV('pa')"><span class="pa-sep">/</span><input class="pa-inp" type="number" id="v-pad" placeholder="--" oninput="checkV('pa')"><span class="vc-unit" style="margin-left:4px">mmHg</span></div><div class="vc-status" id="vs-pa"></div></div>
+        <div class="vc" id="vc-temp"><div class="vc-l">Temperatura</div><input class="vc-inp" type="number" id="v-temp" placeholder="--" step="0.1" oninput="checkV('temp')"><div class="vc-unit">°C</div><div class="vc-status" id="vs-temp"></div></div>
+        <div class="vc" id="vc-gluc"><div class="vc-l">Glucosa</div><input class="vc-inp" type="number" id="v-gluc" placeholder="--" oninput="checkV('gluc')"><div class="vc-unit">mg/dL</div><div class="vc-status" id="vs-gluc"></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tp-actividades">
+      <div class="acts-grid">
+        <div class="act-item" onclick="toggleAct(this,'Aseo personal')"><div class="act-ico">🧼</div><div class="act-nm">Aseo personal</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Desayuno asistido')"><div class="act-ico">🍽️</div><div class="act-nm">Desayuno</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Medicación')"><div class="act-ico">💊</div><div class="act-nm">Medicación</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Caminata')"><div class="act-ico">🚶</div><div class="act-nm">Caminata</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Ejercicios respiratorios')"><div class="act-ico">🫁</div><div class="act-nm">Ejercicios resp.</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Incentivómetro')"><div class="act-ico">🫧</div><div class="act-nm">Incentivómetro</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Ejercicios con bandas')"><div class="act-ico">💪</div><div class="act-nm">Ejercicios bandas</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Juego de cartas')"><div class="act-ico">🃏</div><div class="act-nm">Juego de cartas</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Cambio de posición')"><div class="act-ico">🔄</div><div class="act-nm">Cambio posición</div><div class="act-chk"></div></div>
+        <div class="act-item" onclick="toggleAct(this,'Curaciones')"><div class="act-ico">🩹</div><div class="act-nm">Curaciones</div><div class="act-chk"></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tp-novedades">
+      <textarea class="nov-ta" id="nov-text" placeholder="Escribe aquí todo lo importante del turno. Igual que en WhatsApp pero guardado para siempre..."></textarea>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">💡 La coordinadora puede ver estas novedades en tiempo real desde su panel.</div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn-guardar" id="btn-guardar" onclick="guardarRegistro()">💾 Guardar registro</button>
+      <button class="btn-salir-turno" onclick="showCheckout()">🏁 Salir</button>
+    </div>
+  </div>
+
+  <!-- Confirmación guardado -->
+  <div id="tab-confirm" style="display:none">
+    <div class="confirm-screen">
+      <div class="cf-ico">✅</div>
+      <div class="cf-title">¡Registro guardado!</div>
+      <div class="cf-sub">Los datos están en Supabase. La coordinadora puede verlos ahora.</div>
+      <div class="cf-detail" id="cf-detail"></div>
+      <button class="btn-continuar" onclick="volverTurno()">← Continuar turno</button>
+    </div>
+  </div>
+
+  <!-- Checkout -->
+  <div id="tab-checkout" style="display:none">
+    <div class="checkout-screen">
+      <div style="font-size:56px">🏁</div>
+      <div class="cf-title" style="margin-top:16px">Finalizar Turno</div>
+      <div class="cf-sub">¿Confirmas que terminaste el turno?</div>
+      <div class="co-res" id="co-resumen"></div>
+      <button class="btn-checkout-confirm" onclick="confirmarCheckout()">✅ Confirmar salida</button>
+      <button class="btn-checkout-cancel" onclick="mostrarTurno()">← Volver al turno</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SCREEN: FAMILIA ════ -->
+<div class="screen" id="sc-familia">
+  <div class="sidebar">
+    <div class="sb-brand"><div class="sb-mark">S</div><div class="sb-name">SerenityOS</div><div class="sb-role-lbl">Portal Familias</div></div>
+    <nav class="sb-nav">
+      <button class="nav-item on" onclick="goViewFam('fam-estado')"><span class="ni">❤️</span>Estado hoy</button>
+      <button class="nav-item" onclick="goViewFam('fam-historial')"><span class="ni">📅</span>Historial</button>
+      <button class="nav-item" onclick="goViewFam('fam-contacto')"><span class="ni">📞</span>Contactos</button>
+    </nav>
+    <div class="sb-bottom">
+      <div class="sb-user"><div class="sb-av">👨‍👩‍👧</div><div class="sb-uname" id="fam-uname">—</div></div>
+      <button class="btn-logout" onclick="signOut()">Cerrar sesión</button>
+    </div>
+  </div>
+  <div class="main-area">
+    <div class="topbar">
+      <div><div class="tb-title" id="fam-tb-title">Estado del Paciente</div><div class="tb-sub" id="fam-tb-sub">Información en tiempo real</div></div>
+      <div class="tb-right"><button class="btn-outline" onclick="cargarFamilia()">🔄 Actualizar</button></div>
+    </div>
+    <div class="content">
+      <div class="view on" id="v-fam-estado">
+        <div class="fam-top"><div class="fam-greeting" id="fam-greeting">Cargando...</div><div class="fam-sub" id="fam-sub2">—</div></div>
+        <div class="fam-grid" id="fam-content"><div class="empty-state"><div class="ei">❤️</div><div class="et">Cargando datos...</div></div></div>
+      </div>
+      <div class="view" id="v-fam-historial">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:16px">Historial de Turnos</div>
+        <div id="fam-historial-list"><div class="empty-state"><div class="ei">📅</div><div class="et">Cargando historial...</div></div></div>
+      </div>
+      <div class="view" id="v-fam-contacto">
+        <div class="card"><div class="card-hdr"><div class="card-t">Contactos del Equipo</div></div><div class="card-body">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--warm)"><div style="font-size:20px">👩‍💼</div><div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Coordinadora</div><div style="font-size:13px;font-weight:600;color:var(--navy)">Serenity Home</div></div></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0"><div style="font-size:20px">🏥</div><div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Empresa</div><div style="font-size:13px;font-weight:600;color:var(--navy)">Serenity Home · Quito, Ecuador</div></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════
+const SURL = 'https://nqvjanmguwadaspyxmum.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xdmphbm1ndXdhZGFzcHl4bXVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzIzNjMsImV4cCI6MjA4OTQ0ODM2M30.nHFA62Ql-hSBNSmCc1QIsrzC43HS0uJXZW_UU2vtKfY';
+const { createClient } = supabase;
+const db = createClient(SURL, SKEY);
+
+const TARIFA_DIA = 2.50, TARIFA_NOCHE = 3.00;
+
+// ══════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════
+let S = {
+  user: null, perfil: null,
+  pacientes: [], cuidadores: [], turnos: [], alertas: [],
+  turnoActivo: null, cuidadorSel: null, pacienteSel: null,
+  timerInterval: null, actsSeleccionadas: [], alertasPendientes: [],
+  periodo: 'q1'
+};
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmtHrs(h){ const hrs=Math.floor(h),min=Math.round((h-hrs)*60); return `${hrs}h ${pad(min)}m`; }
+function fmtPago(v){ return '$'+v.toFixed(2); }
+function fmtTime(d){ return pad(new Date(d).getHours())+':'+pad(new Date(d).getMinutes()); }
+function timerStr(s){ const tot=Math.floor((new Date()-new Date(s))/1000),h=Math.floor(tot/3600),m=Math.floor((tot%3600)/60),sc=tot%60; return h+':'+pad(m)+':'+pad(sc); }
+
+function showToast(msg, type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+type;
+  setTimeout(()=>t.className='toast',3500);
+}
+
+function setLoading(show, sub=''){
+  const el=document.getElementById('loading');
+  el.className=show?'':'hide';
+  if(sub) el.querySelector('.load-sub').textContent=sub;
+}
+
+function showScreen(id){
+  // Ocultar TODAS las pantallas completamente
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.remove('on');
+    s.style.display='none';
+  });
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.add('on');
+  if(id==='sc-app'||id==='sc-familia') el.style.display='flex';
+  else if(id==='sc-login'||id==='sc-setup') el.style.display='flex';
+  else el.style.display='block';
+}
+
+async function fetchDB(table, params=''){
+  const r=await fetch(`${SURL}/rest/v1/${table}${params}`,{
+    headers:{'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'}
+  });
+  if(!r.ok){ const e=await r.text(); throw new Error(e); }
+  return r.json();
+}
+
+async function postDB(table, data){
+  const r=await fetch(`${SURL}/rest/v1/${table}`,{
+    method:'POST',
+    headers:{'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=representation'},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok){ const e=await r.text(); throw new Error(e); }
+  return r.json();
+}
+
+async function patchDB(table, id, data){
+  const r=await fetch(`${SURL}/rest/v1/${table}?id=eq.${id}`,{
+    method:'PATCH',
+    headers:{'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok){ const e=await r.text(); throw new Error(e); }
+  return r.json();
+}
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+async function loginGoogle(){
+  const {error}=await db.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo:'https://serenityos-login.netlify.app'}
+  });
+  if(error) showToast('Error: '+error.message,'err');
+}
+
+async function signOut(){
+  await db.auth.signOut();
+  S={...S,user:null,perfil:null};
+  showScreen('sc-login');
+  setLoading(false);
+}
+
+async function verificarSesion(){
+  setLoading(true,'Verificando sesión...');
+  // Si hay hash de OAuth en la URL, esperar un momento para que Supabase procese
+  if(window.location.hash && window.location.hash.includes('access_token')){
+    await new Promise(r=>setTimeout(r,800));
+    window.history.replaceState(null,'',window.location.pathname);
+  }
+  const {data:{session}}=await db.auth.getSession();
+  if(!session){ setLoading(false); showScreen('sc-login'); return; }
+  S.user=session.user;
+  setLoading(true,'Bienvenido/a '+( S.user.user_metadata?.full_name||S.user.email));
+
+  try{
+    const data=await fetchDB('usuarios_roles',`?user_id=eq.${S.user.id}&limit=1`);
+    if(data && data.length>0){
+      S.perfil=data[0];
+      entrarConRol(S.perfil.rol, S.perfil.paciente_id);
+    } else {
+      await cargarPacientesSetup();
+      document.getElementById('setup-sub').textContent=`Bienvenido/a ${S.user.email} — selecciona tu rol.`;
+      setLoading(false);
+      showScreen('sc-setup');
+    }
+  } catch(e){
+    setLoading(false);
+    showScreen('sc-login');
+    showToast('Error: '+e.message,'err');
+  }
+}
+
+// ══════════════════════════════════════
+// SETUP ROL
+// ══════════════════════════════════════
+let rolSel=null, pacSel=null;
+
+function selRole(rol, btn){
+  rolSel=rol;
+  document.querySelectorAll('.setup-role-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const ps=document.getElementById('pac-select');
+  ps.className=rol==='familia'?'pac-select show':'pac-select';
+  if(rol!=='familia') pacSel=null;
+}
+
+async function cargarPacientesSetup(){
+  const data=await fetchDB('pacientes','?activo=eq.true&order=nombre');
+  const sel=document.getElementById('pac-select');
+  sel.innerHTML='<option value="">Selecciona el paciente...</option>'+(data||[]).map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  sel.onchange=()=>{ pacSel=sel.value; };
+}
+
+async function confirmarRol(){
+  if(!rolSel){ showToast('Selecciona tu rol','err'); return; }
+  if(rolSel==='familia'&&!pacSel){ showToast('Selecciona el paciente','err'); return; }
+  try{
+    await postDB('usuarios_roles',[{
+      user_id:S.user.id, email:S.user.email,
+      nombre:S.user.user_metadata?.full_name||S.user.email,
+      rol:rolSel, paciente_id:pacSel||null
+    }]);
+    S.perfil={rol:rolSel, paciente_id:pacSel};
+    entrarConRol(rolSel, pacSel);
+  } catch(e){
+    if(e.message.includes('duplicate')||e.message.includes('23505')){
+      entrarConRol(rolSel, pacSel);
+    } else {
+      showToast('Error: '+e.message,'err');
+    }
+  }
+}
+
+function entrarConRol(rol, pacienteId){
+  setLoading(true,'Cargando tu panel...');
+  if(rol==='coordinadora'){
+    cargarDatos().then(()=>{ setLoading(false); showScreen('sc-app'); });
+  } else if(rol==='cuidadora'){
+    cargarTablet().then(()=>{ setLoading(false); showScreen('sc-tablet'); iniciarRelojTablet(); });
+  } else if(rol==='familia'){
+    S.famPacienteId=pacienteId;
+    cargarFamilia().then(()=>{ setLoading(false); showScreen('sc-familia'); });
+  }
+  if(S.user){
+    const nombre=S.user.user_metadata?.full_name||S.user.email||'—';
+    document.getElementById('sb-uname').textContent=nombre;
+    document.getElementById('fam-uname').textContent=nombre;
+    document.getElementById('sb-rol-lbl').textContent=rol.charAt(0).toUpperCase()+rol.slice(1);
+  }
+}
+
+// ══════════════════════════════════════
+// DATOS COORDINADORA
+// ══════════════════════════════════════
+async function cargarDatos(){
+  try{
+    const [pacs,cuids,turnos,alertas]=await Promise.all([
+      fetchDB('pacientes','?activo=eq.true&order=nombre'),
+      fetchDB('cuidadores','?activo=eq.true&order=nombre'),
+      fetchDB('turnos','?estado=eq.activo&order=entrada.desc&select=*,pacientes(nombre,domicilio),cuidadores(nombre,rol)'),
+      fetchDB('alertas','?revisada=eq.false&order=creado_en.desc&limit=20&select=*,pacientes(nombre)')
+    ]);
+    S.pacientes=pacs||[]; S.cuidadores=cuids||[];
+    S.turnos=turnos||[]; S.alertas=alertas||[];
+
+    // Cargar últimos vitales por turno
+    for(let t of S.turnos){
+      try{
+        const v=await fetchDB('signos_vitales',`?turno_id=eq.${t.id}&order=registrado_en.desc&limit=1`);
+        t.vital=v&&v.length?v[0]:null;
+      } catch(e){ t.vital=null; }
+    }
+
+    renderDashboard(); renderNomina(); renderAlertas(); renderPacientes(); renderCuidadoras();
+    actualizarBadges();
+    showToast('✅ Datos actualizados','ok');
+  } catch(e){ showToast('Error: '+e.message,'err'); }
+}
+
+function renderDashboard(){
+  document.getElementById('k-turnos').textContent=S.turnos.length;
+  document.getElementById('k-turnos-s').textContent=S.turnos.length?S.turnos.map(t=>t.cuidadores?.nombre?.split(' ')[0]).join(', '):'Sin turnos';
+  document.getElementById('k-alertas').textContent=S.alertas.length;
+  document.getElementById('k-alertas-s').textContent=S.alertas.filter(a=>a.nivel==='critico').length+' críticas';
+  document.getElementById('k-pacs').textContent=S.pacientes.length;
+  document.getElementById('k-cuids').textContent=S.cuidadores.length;
+
+  // Banners alertas críticas
+  const criticas=S.alertas.filter(a=>a.nivel==='critico');
+  document.getElementById('alert-banners').innerHTML=criticas.map(a=>`
+    <div class="crit-banner" id="b-${a.id}">
+      <div style="font-size:20px">🚨</div>
+      <div><div style="color:#fff;font-size:14px;font-weight:700">ALERTA CRÍTICA — ${a.pacientes?.nombre||'—'}</div><div style="color:rgba(255,255,255,.8);font-size:12px;margin-top:2px">${a.mensaje||''}</div></div>
+      <button class="cb-btn" onclick="marcarAlerta('${a.id}')">Revisar ✓</button>
+    </div>`).join('');
+
+  // Turnos
+  if(!S.turnos.length){
+    document.getElementById('turnos-container').innerHTML='<div class="empty-state"><div class="ei">✅</div><div class="et">Sin turnos activos</div></div>';
+  } else {
+    document.getElementById('turnos-container').innerHTML=S.turnos.map(t=>{
+      const v=t.vital;
+      const crit=v&&(v.saturacion<93||v.frecuencia_cardiaca>100||v.frecuencia_cardiaca<50);
+      return `<div class="shift-card ${crit?'crit':''}">
+        <div class="sc-hdr ${crit?'bg-crit':'bg-ok'}">
+          <div><div class="sc-pac">${t.pacientes?.nombre||'—'}</div><div class="sc-car">👩‍⚕️ ${t.cuidadores?.nombre||'—'} · ${t.pacientes?.domicilio||''}</div></div>
+          <div style="text-align:right"><div class="sc-timer ${crit?'c-crit':''}" id="st-${t.id}">${timerStr(t.entrada)}</div><div style="font-size:9px;color:var(--muted)">turno activo</div></div>
+        </div>
+        <div class="sc-body">
+          <div class="sc-vitals">
+            <div class="sv ${v?.saturacion<93?'crit':v?.saturacion?'ok':''}"><div class="sv-v">${v?.saturacion!=null?v.saturacion+'%':'—'}</div><div class="sv-l">Sat O₂</div></div>
+            <div class="sv ${v?.pa_sistolica?'ok':''}"><div class="sv-v">${v?.pa_sistolica!=null?v.pa_sistolica+'/'+v.pa_diastolica:'—'}</div><div class="sv-l">PA mmHg</div></div>
+            <div class="sv ${v?.frecuencia_cardiaca>100?'crit':v?.frecuencia_cardiaca?'ok':''}"><div class="sv-v">${v?.frecuencia_cardiaca!=null?v.frecuencia_cardiaca:'—'}</div><div class="sv-l">FC lpm</div></div>
+            <div class="sv"><div class="sv-v">${v?.temperatura!=null?v.temperatura+'°':'—'}</div><div class="sv-l">Temp</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);font-style:italic">${v?'Último registro: '+fmtTime(v.registrado_en):'Sin signos vitales aún'}</div>
+        </div>
+      </div>`;
+    }).join('');
+    // Timers
+    S.turnos.forEach(t=>{
+      setInterval(()=>{
+        const el=document.getElementById('st-'+t.id);
+        if(el) el.textContent=timerStr(t.entrada);
+      },1000);
+    });
+  }
+
+  // Pacientes resumen
+  document.getElementById('pac-resumen').innerHTML=S.pacientes.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--warm)">
+      <div style="font-size:18px">👤</div>
+      <div><div style="font-size:13px;font-weight:700;color:var(--navy)">${p.nombre}</div><div style="font-size:10px;color:var(--muted)">${p.diagnostico||'—'}</div></div>
+    </div>`).join('');
+}
+
+// NÓMINA
+function getPeriodo(tipo){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  if(tipo==='q1') return {ini:new Date(y,m,1),fin:new Date(y,m,15,23,59,59),lbl:`1ra quincena ${meses[m]} ${y}`};
+  if(tipo==='q2') return {ini:new Date(y,m,16),fin:new Date(y,m+1,0,23,59,59),lbl:`2da quincena ${meses[m]} ${y}`};
+  return {ini:new Date(y,m,1),fin:new Date(y,m+1,0,23,59,59),lbl:`${meses[m]} ${y} completo`};
+}
+
+function calcHoras(entrada,salida){
+  if(!entrada||!salida) return {dia:0,noche:0,total:0};
+  let dia=0,noche=0,cur=new Date(entrada);
+  const fin=new Date(salida);
+  while(cur<fin){
+    const next=new Date(cur); next.setHours(cur.getHours()+1);
+    const hasta=next<fin?next:fin;
+    const frac=(hasta-cur)/3600000;
+    const h=cur.getHours();
+    if(h>=6&&h<20) dia+=frac; else noche+=frac;
+    cur=next;
+  }
+  return {dia:Math.round(dia*100)/100,noche:Math.round(noche*100)/100,total:Math.round((dia+noche)*100)/100};
+}
+
+function setPeriodo(tipo,btn){
+  S.periodo=tipo;
+  document.querySelectorAll('.pt').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderNomina();
+}
+
+function renderNomina(){
+  const p=getPeriodo(S.periodo);
+  // Filtrar turnos completados del período
+  const completados=S.turnos.filter(t=>{
+    // También incluir turnos completados que cargamos
+    return false; // Los turnos activos no van en nómina
+  });
+  // Necesitamos cargar turnos completados también
+  fetchDB('turnos',`?estado=eq.completado&order=entrada.desc&select=*,pacientes(nombre),cuidadores(nombre,rol)`).then(allTurnos=>{
+    const del_periodo=(allTurnos||[]).filter(t=>t.entrada&&t.salida&&new Date(t.entrada)>=p.ini&&new Date(t.entrada)<=p.fin);
+    const por={};
+    S.cuidadores.forEach(c=>{por[c.id]={...c,turnos:[],dia:0,noche:0,total:0,pago:0};});
+    del_periodo.forEach(t=>{
+      if(!t.cuidador_id||!por[t.cuidador_id]) return;
+      const h=calcHoras(t.entrada,t.salida);
+      const pg=h.dia*TARIFA_DIA+h.noche*TARIFA_NOCHE;
+      por[t.cuidador_id].turnos.push(t);
+      por[t.cuidador_id].dia+=h.dia;
+      por[t.cuidador_id].noche+=h.noche;
+      por[t.cuidador_id].total+=h.total;
+      por[t.cuidador_id].pago+=pg;
+    });
+    const lista=Object.values(por);
+    const totalHrs=lista.reduce((s,c)=>s+c.total,0);
+    const totalPago=lista.reduce((s,c)=>s+c.pago,0);
+    document.getElementById('n-hrs').textContent=fmtHrs(totalHrs);
+    document.getElementById('n-pago').textContent=fmtPago(totalPago);
+    document.getElementById('n-turnos').textContent=del_periodo.length;
+    document.getElementById('n-noche').textContent=fmtHrs(lista.reduce((s,c)=>s+c.noche,0));
+    document.getElementById('n-periodo-lbl').textContent=p.lbl+' · $2.50/h día · $3.00/h noche';
+
+    if(!del_periodo.length){
+      document.getElementById('nom-container').innerHTML='<div class="empty-state"><div class="ei">📋</div><div class="et">Sin turnos completados en este período</div><div style="font-size:12px;color:var(--muted)">Los turnos aparecen cuando la cuidadora hace check-out.</div></div>';
+      return;
+    }
+    document.getElementById('nom-container').innerHTML=`<table class="nom">
+      <thead><tr><th>Cuidadora</th><th>Turnos</th><th>Hrs día</th><th>Hrs noche</th><th>Total hrs</th><th>Total pago</th></tr></thead>
+      <tbody>${lista.map(c=>`<tr>
+        <td><strong>${c.nombre}</strong><div style="font-size:10px;color:var(--muted)">${c.rol||''}</div></td>
+        <td>${c.turnos.length}</td>
+        <td>${fmtHrs(c.dia)}</td>
+        <td>${fmtHrs(c.noche)}</td>
+        <td><strong>${fmtHrs(c.total)}</strong></td>
+        <td class="pago-val">${fmtPago(c.pago)}</td>
+      </tr>`).join('')}
+      <tr class="tot"><td><strong>TOTAL</strong></td><td>${del_periodo.length}</td><td>${fmtHrs(lista.reduce((s,c)=>s+c.dia,0))}</td><td>${fmtHrs(lista.reduce((s,c)=>s+c.noche,0))}</td><td><strong>${fmtHrs(totalHrs)}</strong></td><td class="pago-val">${fmtPago(totalPago)}</td></tr>
+      </tbody></table>`;
+  }).catch(e=>{ document.getElementById('nom-container').innerHTML='<div class="empty-state"><div class="ei">❌</div><div class="et">Error cargando nómina</div></div>'; });
+}
+
+function renderAlertas(){
+  const cont=document.getElementById('alertas-container');
+  if(!S.alertas.length){ cont.innerHTML='<div class="empty-state"><div class="ei">✅</div><div class="et">Sin alertas pendientes</div></div>'; return; }
+  cont.innerHTML=S.alertas.map(a=>`
+    <div class="alert-item ${a.nivel==='critico'?'unread':''}">
+      <div style="font-size:20px;flex-shrink:0">${a.nivel==='critico'?'🚨':a.nivel==='urgente'?'⚠️':'ℹ️'}</div>
+      <div style="flex:1">
+        <div class="ai-t">${a.tipo?.replace(/_/g,' ').toUpperCase()||'ALERTA'} — ${a.pacientes?.nombre||'—'}</div>
+        <div class="ai-s">${a.mensaje||''}</div>
+        <div class="ai-time">${new Date(a.creado_en).toLocaleString('es-EC')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <span class="sev-pill ${a.nivel==='critico'?'sev-c':a.nivel==='urgente'?'sev-w':'sev-i'}">${a.nivel?.toUpperCase()||'INFO'}</span>
+        <button style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline" onclick="marcarAlerta('${a.id}')">Marcar resuelta</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderPacientes(){
+  document.getElementById('pacientes-container').innerHTML=S.pacientes.map(p=>`
+    <div class="pac-card">
+      <div class="pac-hdr"><div class="pac-av">👤</div><div><div class="pac-n">${p.nombre}</div><div class="pac-d">${p.edad||''}${p.edad?' años':''} · ${p.tipo_cuidado||''}</div></div></div>
+      <div class="pac-body">
+        <div class="pac-row"><span class="pac-lbl">Diagnóstico</span><span class="pac-val">${p.diagnostico||'—'}</span></div>
+        <div class="pac-row"><span class="pac-lbl">Domicilio</span><span class="pac-val">${p.domicilio||'—'}</span></div>
+        <div class="pac-row"><span class="pac-lbl">Contacto</span><span class="pac-val">${p.contacto_familiar||'—'}</span></div>
+        ${p.observaciones?`<div style="margin-top:10px;font-size:11px;color:var(--muted);background:var(--lg);padding:10px;border-radius:8px;line-height:1.6">${p.observaciones}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderCuidadoras(){
+  const activos=S.turnos.map(t=>t.cuidador_id);
+  document.getElementById('cuidadoras-container').innerHTML=S.cuidadores.map(c=>`
+    <div style="background:#fff;border:1px solid var(--warm);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;background:var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👩‍⚕️</div>
+      <div><div style="font-size:14px;font-weight:700;color:var(--navy)">${c.nombre}</div><div style="font-size:11px;color:var(--muted)">${c.rol||''}</div><div style="font-size:11px;color:var(--teal);margin-top:2px">${c.telefono||''}</div></div>
+      <span style="margin-left:auto;padding:4px 10px;border-radius:10px;font-size:10px;font-weight:700;${activos.includes(c.id)?'background:var(--okl);color:var(--ok)':'background:var(--lg);color:var(--muted);border:1px solid var(--warm)'}">${activos.includes(c.id)?'🟢 En turno':'⚪ Libre'}</span>
+    </div>`).join('');
+}
+
+async function marcarAlerta(id){
+  await patchDB('alertas',id,{revisada:true,revisada_en:new Date().toISOString()}).catch(()=>{});
+  document.getElementById('b-'+id)?.remove();
+  S.alertas=S.alertas.filter(a=>a.id!==id);
+  renderAlertas(); actualizarBadges();
+  showToast('✅ Alerta marcada como resuelta','ok');
+}
+
+function actualizarBadges(){
+  const ba=document.getElementById('badge-a');
+  const bt=document.getElementById('badge-t');
+  if(S.alertas.length>0){ba.textContent=S.alertas.length;ba.classList.remove('hide');}else ba.classList.add('hide');
+  if(S.turnos.length>0){bt.textContent=S.turnos.length;bt.classList.remove('hide');}else bt.classList.add('hide');
+}
+
+function goView(v){
+  document.querySelectorAll('#sc-app .view').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('on'));
+  document.getElementById('v-'+v)?.classList.add('on');
+  const map={dashboard:0,nomina:1,alertas:2,pacientes:3,cuidadoras:4};
+  const btns=document.querySelectorAll('.nav-item');
+  if(btns[map[v]]) btns[map[v]].classList.add('on');
+  const titles={dashboard:'Dashboard',nomina:'Nómina Quincenal',alertas:'Centro de Alertas',pacientes:'Pacientes',cuidadoras:'Cuidadoras'};
+  document.getElementById('tb-title').textContent=titles[v]||v;
+}
+
+// ══════════════════════════════════════
+// TABLET (CUIDADORA)
+// ══════════════════════════════════════
+async function cargarTablet(){
+  const [cuids,pacs]=await Promise.all([
+    fetchDB('cuidadores','?activo=eq.true&order=nombre'),
+    fetchDB('pacientes','?activo=eq.true&order=nombre')
+  ]);
+  S.cuidadores=cuids||[]; S.pacientes=pacs||[];
+  const emojis=['👩‍⚕️','👩‍⚕️','👨‍⚕️','👩‍⚕️'];
+  document.getElementById('tab-cuid-btns').innerHTML=S.cuidadores.map((c,i)=>`
+    <button class="cuid-btn" onclick="selCuidador('${c.id}')">
+      <div class="cuid-av">${emojis[i]||'👤'}</div>
+      <div><div class="cuid-nm">${c.nombre}</div><div class="cuid-rl">${c.rol||''}</div></div>
+    </button>`).join('');
+}
+
+function iniciarRelojTablet(){
+  const update=()=>{
+    const now=new Date();
+    document.getElementById('tab-clock').textContent=pad(now.getHours())+':'+pad(now.getMinutes());
+    const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    document.getElementById('tab-date').textContent=`${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]}`;
+  };
+  update(); setInterval(update,1000);
+}
+
+async function selCuidador(id){
+  S.cuidadorSel=S.cuidadores.find(c=>c.id===id);
+  S.pacienteSel=S.pacientes[0];
+  if(!S.pacienteSel){ showToast('Sin pacientes registrados','err'); return; }
+  try{
+    const data=await postDB('turnos',[{
+      paciente_id:S.pacienteSel.id,
+      cuidador_id:S.cuidadorSel.id,
+      entrada:new Date().toISOString(),
+      estado:'activo',tipo_turno:'dia'
+    }]);
+    S.turnoActivo=data[0];
+    document.getElementById('ta-pacn').textContent=S.pacienteSel.nombre;
+    document.getElementById('ta-cuid').textContent='👩‍⚕️ '+S.cuidadorSel.nombre;
+    clearInterval(S.timerInterval);
+    S.timerInterval=setInterval(()=>{
+      const el=document.getElementById('ta-timer');
+      if(el&&S.turnoActivo) el.textContent=timerStr(S.turnoActivo.entrada);
+    },1000);
+    mostrarTurno();
+    showToast('✅ Turno iniciado','ok');
+  } catch(e){ showToast('Error: '+e.message,'err'); }
+}
+
+function mostrarTurno(){
+  document.getElementById('tab-bienvenida').style.display='none';
+  document.getElementById('tab-turno').style.display='block';
+  document.getElementById('tab-confirm').style.display='none';
+  document.getElementById('tab-checkout').style.display='none';
+}
+
+function goTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tp-'+tab)?.classList.add('on');
+  btn.classList.add('on');
+}
+
+function checkV(tipo){
+  const configs={
+    sat:{id:'v-sat',card:'vc-sat',st:'vs-sat',ok:v=>v>=93,crit:v=>v<90,mc:'⚠️ Saturación crítica (<93%)',mw:'⚡ Saturación baja',mok:'✅ Normal'},
+    fc:{id:'v-fc',card:'vc-fc',st:'vs-fc',ok:v=>v>=50&&v<=100,crit:v=>v>110||v<45,mc:'⚠️ FC fuera de rango',mw:'⚡ FC en límite',mok:'✅ Normal'},
+    temp:{id:'v-temp',card:'vc-temp',st:'vs-temp',ok:v=>v>=36&&v<=37.5,crit:v=>v>38||v<35.5,mc:'⚠️ Temperatura anormal',mw:'⚡ Temperatura en límite',mok:'✅ Normal'},
+    gluc:{id:'v-gluc',card:'vc-gluc',st:'vs-gluc',ok:v=>v>=70&&v<=140,crit:v=>v>200||v<60,mc:'⚠️ Glucosa crítica',mw:'⚡ Glucosa en límite',mok:'✅ Normal'},
+  };
+  if(tipo==='pa'){
+    const pas=parseFloat(document.getElementById('v-pas').value);
+    const pad=parseFloat(document.getElementById('v-pad').value);
+    const card=document.getElementById('vc-pa');
+    const st=document.getElementById('vs-pa');
+    if(!pas||!pad){card.className='vc';st.textContent='';return;}
+    if(pas>140||pas<90||pad>90||pad<60){
+      card.className='vc crit filled';st.className='vc-status crit';st.textContent='⚠️ Presión fuera de rango';
+      programarAlerta(`Presión: ${pas}/${pad} mmHg`);
+    } else {
+      card.className='vc filled';st.className='vc-status ok';st.textContent='✅ Normal';
+    }
+    return;
+  }
+  const cfg=configs[tipo];
+  if(!cfg) return;
+  const val=parseFloat(document.getElementById(cfg.id).value);
+  const card=document.getElementById(cfg.card);
+  const st=document.getElementById(cfg.st);
+  if(!val){card.className='vc';st.textContent='';return;}
+  if(cfg.crit(val)){
+    card.className='vc crit filled';st.className='vc-status crit';st.textContent=cfg.mc;
+    programarAlerta(cfg.mc+' ('+val+')');
+  } else if(!cfg.ok(val)){
+    card.className='vc filled';st.className='vc-status ok';st.textContent=cfg.mw;
+  } else {
+    card.className='vc filled';st.className='vc-status ok';st.textContent=cfg.mok;
+  }
+}
+
+function programarAlerta(msg){
+  if(!S.alertasPendientes.includes(msg)) S.alertasPendientes.push(msg);
+}
+
+function toggleAct(el,nombre){
+  el.classList.toggle('on');
+  const chk=el.querySelector('.act-chk');
+  if(el.classList.contains('on')){
+    chk.textContent='✓';
+    if(!S.actsSeleccionadas.includes(nombre)) S.actsSeleccionadas.push(nombre);
+  } else {
+    chk.textContent='';
+    S.actsSeleccionadas=S.actsSeleccionadas.filter(a=>a!==nombre);
+  }
+}
+
+async function guardarRegistro(){
+  if(!S.turnoActivo){ showToast('Sin turno activo','err'); return; }
+  const btn=document.getElementById('btn-guardar');
+  btn.disabled=true; btn.textContent='⏳ Guardando...';
+  const sat=parseInt(document.getElementById('v-sat').value)||null;
+  const fc=parseInt(document.getElementById('v-fc').value)||null;
+  const pas=parseInt(document.getElementById('v-pas').value)||null;
+  const pad_=parseInt(document.getElementById('v-pad').value)||null;
+  const temp=parseFloat(document.getElementById('v-temp').value)||null;
+  const gluc=parseInt(document.getElementById('v-gluc').value)||null;
+  const texto=document.getElementById('nov-text').value.trim();
+  let items=[];
+  try{
+    if(sat||fc||pas||temp||gluc){
+      await postDB('signos_vitales',[{turno_id:S.turnoActivo.id,paciente_id:S.pacienteSel.id,saturacion:sat,frecuencia_cardiaca:fc,pa_sistolica:pas,pa_diastolica:pad_,temperatura:temp,glucosa:gluc,registrado_en:new Date().toISOString()}]);
+      items.push({l:'Signos vitales',v:'✅ Guardados'});
+    }
+    if(S.actsSeleccionadas.length){
+      await postDB('actividades',S.actsSeleccionadas.map(a=>({turno_id:S.turnoActivo.id,actividad:a,completada:true})));
+      items.push({l:'Actividades',v:S.actsSeleccionadas.length+' registradas'});
+    }
+    if(texto){
+      await postDB('novedades',[{turno_id:S.turnoActivo.id,texto}]);
+      items.push({l:'Novedad',v:texto.substring(0,40)+'...'});
+    }
+    btn.disabled=false; btn.textContent='💾 Guardar registro';
+    document.getElementById('cf-detail').innerHTML=items.map(i=>`<div class="cf-row"><span class="cf-lbl">${i.l}</span><span class="cf-val">${i.v}</span></div>`).join('')||'<div class="cf-row"><span class="cf-lbl">Estado</span><span class="cf-val">Sin cambios</span></div>';
+    document.getElementById('tab-turno').style.display='none';
+    document.getElementById('tab-confirm').style.display='block';
+    if(S.alertasPendientes.length){
+      setTimeout(()=>{
+        document.getElementById('alertaMsg').textContent='⚠️ '+S.alertasPendientes.join(' · ')+'\n\nLa coordinadora fue notificada automáticamente.';
+        document.getElementById('alertaOverlay').classList.add('show');
+        S.alertasPendientes=[];
+      },600);
+    }
+  } catch(e){ btn.disabled=false; btn.textContent='💾 Guardar registro'; showToast('Error: '+e.message,'err'); }
+}
+
+function volverTurno(){
+  ['v-sat','v-fc','v-pas','v-pad','v-temp','v-gluc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['vc-sat','vc-fc','vc-pa','vc-temp','vc-gluc'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='vc';});
+  ['vs-sat','vs-fc','vs-pa','vs-temp','vs-gluc'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});
+  document.getElementById('nov-text').value='';
+  document.querySelectorAll('.act-item.on').forEach(el=>{el.classList.remove('on');el.querySelector('.act-chk').textContent='';});
+  S.actsSeleccionadas=[];
+  mostrarTurno();
+}
+
+function showCheckout(){
+  const dur=S.turnoActivo?Math.floor((new Date()-new Date(S.turnoActivo.entrada))/1000):0;
+  const h=Math.floor(dur/3600),m=Math.floor((dur%3600)/60);
+  document.getElementById('co-resumen').innerHTML=`
+    <div class="cf-row"><span class="cf-lbl">Cuidadora</span><span class="cf-val">${S.cuidadorSel?.nombre||'—'}</span></div>
+    <div class="cf-row"><span class="cf-lbl">Paciente</span><span class="cf-val">${S.pacienteSel?.nombre||'—'}</span></div>
+    <div class="cf-row"><span class="cf-lbl">Duración</span><span class="cf-val">${h}h ${pad(m)}min</span></div>`;
+  document.getElementById('tab-turno').style.display='none';
+  document.getElementById('tab-confirm').style.display='none';
+  document.getElementById('tab-checkout').style.display='block';
+}
+
+async function confirmarCheckout(){
+  if(!S.turnoActivo){ irBienvenida(); return; }
+  try{
+    await patchDB('turnos',S.turnoActivo.id,{salida:new Date().toISOString(),estado:'completado'});
+    clearInterval(S.timerInterval);
+    S.turnoActivo=null; S.cuidadorSel=null; S.pacienteSel=null; S.actsSeleccionadas=[];
+    showToast('✅ Turno finalizado','ok');
+    irBienvenida();
+  } catch(e){ showToast('Error: '+e.message,'err'); }
+}
+
+function irBienvenida(){
+  document.getElementById('tab-bienvenida').style.display='block';
+  document.getElementById('tab-turno').style.display='none';
+  document.getElementById('tab-confirm').style.display='none';
+  document.getElementById('tab-checkout').style.display='none';
+}
+
+function cerrarAlerta(){ document.getElementById('alertaOverlay').classList.remove('show'); }
+
+// ══════════════════════════════════════
+// FAMILIAS
+// ══════════════════════════════════════
+async function cargarFamilia(){
+  if(!S.famPacienteId) return;
+  try{
+    const [pac,turnos]=await Promise.all([
+      fetchDB('pacientes',`?id=eq.${S.famPacienteId}&limit=1`),
+      fetchDB('turnos',`?paciente_id=eq.${S.famPacienteId}&order=entrada.desc&limit=10&select=*,cuidadores(nombre,rol)`)
+    ]);
+    const p=pac&&pac[0];
+    const turnoAct=turnos&&turnos.find(t=>t.estado==='activo');
+    if(p){
+      document.getElementById('fam-greeting').textContent='Familia '+p.nombre.split(' ').slice(-1)[0]+' 👋';
+      document.getElementById('fam-sub2').textContent=p.diagnostico||'';
+      document.getElementById('fam-tb-sub').textContent=p.nombre;
+    }
+    let vital=null;
+    if(turnoAct){
+      const v=await fetchDB('signos_vitales',`?turno_id=eq.${turnoAct.id}&order=registrado_en.desc&limit=1`);
+      vital=v&&v[0];
+    }
+    document.getElementById('fam-content').innerHTML=`
+      <div class="fam-card">
+        <div class="fc-hdr"><div><div class="fc-t">❤️ Signos Vitales</div><div class="fc-s">${vital?'Registrado a las '+fmtTime(vital.registrado_en):'Sin datos hoy'}</div></div></div>
+        <div class="fc-body">
+          ${vital?`<div class="fv-grid">
+            <div class="fv ${vital.saturacion<93?'crit':vital.saturacion?'ok':'neu'}"><div class="fv-v">${vital.saturacion!=null?vital.saturacion+'%':'—'}</div><div class="fv-l">Sat O₂</div></div>
+            <div class="fv ${vital.pa_sistolica?'ok':'neu'}"><div class="fv-v">${vital.pa_sistolica!=null?vital.pa_sistolica+'/'+vital.pa_diastolica:'—'}</div><div class="fv-l">PA mmHg</div></div>
+            <div class="fv ${vital.frecuencia_cardiaca>100?'crit':vital.frecuencia_cardiaca?'ok':'neu'}"><div class="fv-v">${vital.frecuencia_cardiaca!=null?vital.frecuencia_cardiaca:'—'}</div><div class="fv-l">FC lpm</div></div>
+            <div class="fv neu"><div class="fv-v">${vital.temperatura!=null?vital.temperatura+'°':'—'}</div><div class="fv-l">Temp</div></div>
+          </div>` : '<div class="empty-state" style="padding:20px 0"><div class="ei">📊</div><div class="et">Sin vitales registrados hoy</div></div>'}
+        </div>
+      </div>
+      <div class="fam-card">
+        <div class="fc-hdr"><div><div class="fc-t">⏱️ Turno de Hoy</div><div class="fc-s">${turnoAct?'🟢 Activo ahora':'Sin turno activo'}</div></div></div>
+        <div class="fc-body">
+          ${turnoAct?`<div style="text-align:center;font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--teal);margin-bottom:12px" id="fam-timer">${timerStr(turnoAct.entrada)}</div>
+          <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px">horas de acompañamiento</div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy)">👩‍⚕️ ${turnoAct.cuidadores?.nombre||'—'}</div>
+          <div style="font-size:11px;color:var(--ok);margin-top:4px">✅ Verificado en domicilio · ${fmtTime(turnoAct.entrada)}</div>`
+          :'<div class="empty-state" style="padding:20px 0"><div class="ei">📅</div><div class="et">Sin turno activo ahora</div></div>'}
+        </div>
+      </div>
+      <div class="fam-card full">
+        <div class="fc-hdr"><div class="fc-t">👤 ${p?.nombre||'Paciente'}</div></div>
+        <div class="fc-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Diagnóstico</div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-top:3px">${p?.diagnostico||'—'}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Tipo de cuidado</div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-top:3px">${p?.tipo_cuidado||'—'}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Domicilio</div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-top:3px">${p?.domicilio||'—'}</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Edad</div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-top:3px">${p?.edad?p.edad+' años':'—'}</div></div>
+        </div>
+      </div>`;
+
+    // Timer familia
+    if(turnoAct){
+      setInterval(()=>{
+        const el=document.getElementById('fam-timer');
+        if(el) el.textContent=timerStr(turnoAct.entrada);
+      },1000);
+    }
+
+    // Historial
+    document.getElementById('fam-historial-list').innerHTML=(turnos||[]).map(t=>`
+      <div style="background:#fff;border:1px solid var(--warm);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div><div style="font-size:13px;font-weight:700;color:var(--navy)">${new Date(t.entrada).toLocaleDateString('es-EC',{weekday:'short',day:'numeric',month:'short'})}</div><div style="font-size:11px;color:var(--muted)">${t.cuidadores?.nombre||'—'} · ${t.estado==='activo'?'En curso':t.horas_total?t.horas_total+'h':'—'}</div></div>
+        <span style="padding:4px 10px;border-radius:10px;font-size:10px;font-weight:700;${t.estado==='activo'?'background:var(--okl);color:var(--ok)':'background:var(--lg);color:var(--muted);border:1px solid var(--warm)'}">${t.estado==='activo'?'En curso':'Completado'}</span>
+      </div>`).join('');
+  } catch(e){ showToast('Error cargando datos: '+e.message,'err'); }
+}
+
+function goViewFam(v){
+  document.querySelectorAll('#sc-familia .view').forEach(x=>x.classList.remove('on'));
+  document.getElementById('v-'+v)?.classList.add('on');
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+db.auth.onAuthStateChange((event, session)=>{
+  if(event==='SIGNED_OUT'){ showScreen('sc-login'); setLoading(false); }
+});
+verificarSesion();
+</script>
 </body>
 </html>
