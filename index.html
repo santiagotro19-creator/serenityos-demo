@@ -722,7 +722,7 @@ async function patchDB(table, id, data){
 async function loginGoogle(){
   const {error}=await db.auth.signInWithOAuth({
     provider:'google',
-    options:{redirectTo:'https://serenityos-login.netlify.app'}
+    options:{redirectTo:'https://santiagotro19-creator.github.io/serenityos-demo'}
   });
   if(error) showToast('Error: '+error.message,'err');
 }
